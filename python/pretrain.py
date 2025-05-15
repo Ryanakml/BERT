@@ -151,17 +151,39 @@ def compute_loss(model_outputs, mlm_labels, nsp_label, token2idx):
     
     return total_loss, mlm_loss, nsp_loss
 
-def compute_gradients(model_outputs, mlm_labels, nsp_label, token2idx):
+def compute_gradients(model_outputs, mlm_labels, nsp_label, token2idx, model):
     """
     Compute gradients for model parameters
+    
+    Args:
+        model_outputs: Dictionary containing model outputs
+        mlm_labels: Labels for masked language modeling
+        nsp_label: Label for next sentence prediction
+        token2idx: Token to index mapping
+        model: BERT model instance (optional)
     """
     mlm_probs = model_outputs['mlm_probs']
     nsp_probs = model_outputs['nsp_probs']
     sequence_output = model_outputs['sequence_output']
     
+    # Get model parameters either from model instance or model_outputs
+    if model is not None:
+        # Use model instance directly
+        W_mlm_output = model.W_mlm_output
+        b_mlm_output = model.b_mlm_output
+        W_nsp_output = model.W_nsp_output
+        b_nsp_output = model.b_nsp_output
+    else:
+        # Use model parameters from model_outputs
+        model_params = model_outputs.get('model_params', {})
+        W_mlm_output = model_params.get('W_mlm_output')
+        b_mlm_output = model_params.get('b_mlm_output')
+        W_nsp_output = model_params.get('W_nsp_output')
+        b_nsp_output = model_params.get('b_nsp_output')
+    
     # Gradients for MLM output layer
-    d_W_mlm_output = np.zeros_like(model.W_mlm_output)
-    d_b_mlm_output = np.zeros_like(model.b_mlm_output)
+    d_W_mlm_output = np.zeros_like(W_mlm_output)
+    d_b_mlm_output = np.zeros_like(b_mlm_output)
     
     # Compute gradients for masked positions
     for i, label in enumerate(mlm_labels):
@@ -175,8 +197,8 @@ def compute_gradients(model_outputs, mlm_labels, nsp_label, token2idx):
             d_b_mlm_output += d_logits
     
     # Gradients for NSP output layer
-    d_W_nsp_output = np.zeros_like(model.W_nsp_output)
-    d_b_nsp_output = np.zeros_like(model.b_nsp_output)
+    d_W_nsp_output = np.zeros_like(W_nsp_output)
+    d_b_nsp_output = np.zeros_like(b_nsp_output)
     
     d_nsp_probs = np.zeros_like(nsp_probs)
     d_nsp_probs[nsp_label] = -1.0 / (nsp_probs[nsp_label] + 1e-10)

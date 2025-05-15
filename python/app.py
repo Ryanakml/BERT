@@ -66,7 +66,7 @@ col1, col2 = st.columns([3, 2])
 
 with col1:
     st.header("Model Architecture")
-    st.image("https://miro.medium.com/max/1400/1*eTwQsyTwGIj7GN3aCAyg5Q.png", caption="BERT Model Architecture", use_column_width=True)
+    st.image("https://miro.medium.com/v2/resize:fit:1162/1*vG_xN7a9HuLCU05U5IznPQ.png", caption="BERT Model Architecture", use_container_width=True)
     
     st.markdown("""
     ### Simplified BERT Implementation
