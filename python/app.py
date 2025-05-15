@@ -185,7 +185,7 @@ if start_training and len(corpus_list) >= 2:
         st.session_state.losses["nsp"].append(nsp_loss if use_nsp else 0)
         
         # Compute gradients and update parameters
-        gradients = compute_gradients(model_outputs, mlm_labels, nsp_label, token2idx)
+        gradients = compute_gradients(model_outputs, mlm_labels, nsp_label, token2idx, model)
         model.update_parameters(gradients, learning_rate)
         
         # Update progress
