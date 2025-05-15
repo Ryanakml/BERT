@@ -1,15 +1,60 @@
 # BERT Model Implementation
 
-This is a NumPy implementation of the BERT (Bidirectional Encoder Representations from Transformers) model that can be imported and used for pretraining and fine-tuning tasks.
+A comprehensive NumPy implementation of the BERT (Bidirectional Encoder Representations from Transformers) model for natural language processing tasks. This project provides a from-scratch implementation focused on educational understanding of the BERT architecture and pretraining process.
 
-## Overview
+## Project Structure
 
-This implementation includes:
+```
+├── python/
+│   ├── model.py       # Core BERT model implementation
+│   └── pretrain.py    # Pretraining utilities (MLM and NSP)
+├── jupyter/
+│   ├── Bert Model.ipynb              # Model architecture exploration
+│   ├── Bert Fundamental.ipynb        # BERT concepts and basics
+│   ├── Pretrain Bert Model MLM.ipynb # Masked Language Model pretraining
+│   └── Pretrain Bert Model NSP.ipynb # Next Sentence Prediction pretraining
+└── BERT_MODEL_README.md             # This documentation file
+```
 
-- Base BERT model architecture
-- Masked Language Modeling (MLM) head for pretraining
-- Next Sentence Prediction (NSP) head for pretraining
-- Helper functions to easily create models with standard parameters
+## Model Architecture
+
+Our implementation includes the following components:
+
+- **BERTModel**: The main model class with configurable parameters
+- **Embedding Layer**: Combines token, segment, and positional embeddings
+- **Self-Attention Mechanism**: Multi-head attention implementation
+- **Feed-Forward Networks**: Position-wise feed-forward layers with GELU activation
+- **Pretraining Heads**:
+  - **Masked Language Modeling (MLM)**: Predicts masked tokens in a sequence
+  - **Next Sentence Prediction (NSP)**: Determines if two sentences follow each other
+
+### Key Parameters
+
+- `vocab_size`: Size of the vocabulary (default: 30000)
+- `max_seq_length`: Maximum sequence length (default: 512)
+- `d_model`: Hidden size of the model (default: 768)
+- `num_heads`: Number of attention heads (default: 12)
+- `d_ff`: Size of feed-forward layer (default: 3072)
+- `num_layers`: Number of transformer layers (default: 12)
+- `for_pretraining`: Whether to include MLM and NSP heads
+
+## Pretraining Process
+
+The pretraining process involves two main tasks:
+
+### 1. Masked Language Modeling (MLM)
+
+In MLM, approximately 15% of input tokens are masked, and the model is trained to predict these masked tokens based on the context. The masking process follows these rules:
+
+- 80% of selected tokens are replaced with [MASK]
+- 10% are replaced with a random token
+- 10% remain unchanged
+
+This approach helps the model learn bidirectional context and prevents it from simply memorizing the training data.
+
+### 2. Next Sentence Prediction (NSP)
+
+In NSP, the model is given pairs of sentences and trained to predict whether the second sentence follows the first in the original text. This helps the model understand relationships between sentences, which is useful for tasks like question answering and natural language inference.
 
 ## Usage
 
@@ -17,7 +62,7 @@ This implementation includes:
 
 ```python
 # Import the BERT model and helper functions
-from Bert_Model import create_bert_model, BertModel, BertForPretraining
+from python.model import create_bert_model, BERTModel
 ```
 
 ### Creating a Model for Pretraining
@@ -35,7 +80,7 @@ model = create_bert_model(
 )
 
 # Forward pass with input token IDs
-outputs = model.forward(token_ids)
+outputs = model.forward(token_ids, segment_ids, seq_len)
 
 # Access different outputs
 mlm_logits = outputs['mlm_logits']         # For masked token prediction
@@ -59,27 +104,58 @@ base_model = create_bert_model(
 )
 
 # Forward pass returns sequence output directly
-sequence_output = base_model.forward(token_ids)
+sequence_output = base_model.forward(token_ids, segment_ids, seq_len)
 ```
 
-## Example
+### Pretraining Example
 
-See `example_usage.py` for a complete example of how to use the model.
+```python
+# Import pretraining utilities
+from python.pretrain import data_for_pretraining, tokenizer, create_nsp_example, apply_mlm
 
-## Model Architecture
+# Prepare corpus for pretraining
+corpus_list = ["This is the first sentence.", "This is the second sentence.", "This is a random sentence."]
 
-- **WordEmbedding**: Token embedding lookup table
-- **PositionalEncoding**: Sinusoidal position embeddings
-- **MultiheadAttention**: Multi-head self-attention mechanism
-- **FeedForward**: Position-wise feed-forward network with GELU activation
-- **BertBlock**: Transformer encoder block with residual connections and layer normalization
-- **BertModel**: Base BERT model that stacks multiple encoder blocks
-- **MaskedLMHead**: Prediction head for the masked language modeling task
-- **NSPHead**: Prediction head for the next sentence prediction task
-- **BertForPretraining**: Combines the base model with MLM and NSP heads
+# Create vocabulary and tokenizer
+vocab = data_for_pretraining(corpus_list)
+token2idx, idx2token = tokenizer(vocab)
 
-## Notes
+# Create NSP example
+tokens, segment_ids, nsp_label = create_nsp_example(corpus_list, is_next=True)
 
-- This implementation uses NumPy for all operations
-- For pretraining, you'll need to implement masking logic and loss functions
-- The model is designed to be compatible with standard BERT pretraining objectives
+# Apply MLM masking
+masked_tokens, mlm_labels = apply_mlm(tokens, token2idx, mask_prob=0.15)
+
+# Convert tokens to IDs
+token_ids = [token2idx.get(token, token2idx['[UNK]']) for token in masked_tokens]
+
+# Forward pass through the model
+outputs = model.forward(token_ids, segment_ids, len(token_ids))
+```
+
+## Jupyter Notebooks
+
+The project includes several Jupyter notebooks that demonstrate different aspects of the BERT model:
+
+- **Bert Model.ipynb**: Explores the BERT architecture and implementation details
+- **Bert Fundamental.ipynb**: Covers the fundamental concepts behind BERT
+- **Pretrain Bert Model MLM.ipynb**: Demonstrates the Masked Language Modeling pretraining task
+- **Pretrain Bert Model NSP.ipynb**: Demonstrates the Next Sentence Prediction pretraining task
+
+## Implementation Notes
+
+- This implementation uses NumPy for all operations, making it easy to understand the underlying mathematics
+- The model is designed to be educational and follows the original BERT paper's architecture
+- While not optimized for production use, this implementation provides a clear view of how BERT works
+- The code includes detailed comments to explain each component's purpose and functionality
+
+## Future Work
+
+- Fine-tuning examples for specific NLP tasks (classification, NER, etc.)
+- Performance optimizations for larger datasets
+- Support for more advanced BERT variants (RoBERTa, ALBERT, etc.)
+
+## References
+
+- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding](https://arxiv.org/abs/1810.04805)
+- [The Illustrated BERT](http://jalammar.github.io/illustrated-bert/)
